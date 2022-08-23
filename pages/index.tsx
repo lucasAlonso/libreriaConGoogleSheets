@@ -1,6 +1,26 @@
-import { Button, Flex, Grid, Image, Link, Stack, Text } from '@chakra-ui/react';
+import {
+    Button,
+    Flex,
+    Grid,
+    Image,
+    Link,
+    Stack,
+    Text,
+    Drawer,
+    DrawerBody,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerOverlay,
+    DrawerContent,
+    DrawerCloseButton,
+    List,
+    ListItem,
+    ListIcon,
+    OrderedList,
+    UnorderedList,
+} from '@chakra-ui/react';
 import { GetStaticProps } from 'next';
-import React from 'react';
+import React, { Fragment } from 'react';
 import api from '../product/api';
 import { Product } from '../product/types';
 import { motion, AnimatePresence, AnimateSharedLayout } from 'framer-motion';
@@ -17,6 +37,8 @@ function parseCurrency(value: number): string {
 
 const IndexRoute: React.FC<Props> = ({ products }) => {
     const [cart, setCart] = React.useState<Product[]>([]);
+    const [isCartOpen, toggleCart] = React.useState<boolean>(false);
+
     const text = React.useMemo(
         () =>
             cart
@@ -39,73 +61,123 @@ const IndexRoute: React.FC<Props> = ({ products }) => {
                 ),
         [cart]
     );
+    const handleRemoveFromCart = (index: number) => {
+        setCart((cart) => cart.filter((_, _index) => _index !== index));
+    };
 
     return (
-        <Stack spacing={6}>
-            <Grid
-                gridGap={6}
-                templateColumns="repeat(auto-fill,minmax(240px,1fr))"
-            >
-                {products.map(
-                    (product, index) =>
-                        Boolean(product.stock != 0) && (
-                            <Stack
-                                key={index}
-                                backgroundColor="gray.100"
-                                borderRadius="md"
-                                padding={4}
-                                spacing={3}
-                            >
-                                <Stack spacing={1}>
-                                    <Image
-                                        cursor="pointer"
-                                        borderTopRadius="md"
-                                        height={260}
-                                        objectFit="cover"
-                                        src={product.imagen}
-                                        alt={product.nombre}
-                                    />
-                                    <Text>{product.nombre}</Text>
-                                    <Text color="green.500" fontSize="sm">
-                                        {parseCurrency(product.valor)}
-                                    </Text>
-                                </Stack>
-                                <Text>Stock: {product.stock}</Text>
-                                <Button
-                                    onClick={() =>
-                                        setCart((cart) => cart.concat(product))
-                                    }
-                                    size="sm"
-                                    colorScheme="primary"
-                                >
-                                    Agregar
-                                </Button>
-                            </Stack>
-                        )
-                )}
-            </Grid>
-            {Boolean(cart.length) && (
-                <Flex
-                    alignItems="center"
-                    position="sticky"
-                    justifyContent="center"
-                    bottom={4}
+        <Fragment>
+            <Stack spacing={6}>
+                <Grid
+                    gridGap={6}
+                    templateColumns="repeat(auto-fill,minmax(240px,1fr))"
                 >
-                    <Button
-                        isExternal
-                        as={Link}
-                        padding={4}
-                        width="fit-content"
-                        colorScheme="whatsapp"
-                        href={`https://wa.me/549115454?text=${encodeURIComponent(
-                            text
-                        )}`}
+                    {products.map(
+                        (product, index) =>
+                            Boolean(product.stock != 0) && (
+                                <Stack
+                                    key={index}
+                                    backgroundColor="gray.100"
+                                    borderRadius="md"
+                                    padding={4}
+                                    spacing={3}
+                                >
+                                    <Stack spacing={1}>
+                                        <Image
+                                            cursor="pointer"
+                                            borderTopRadius="md"
+                                            height={260}
+                                            objectFit="cover"
+                                            src={product.imagen}
+                                            alt={product.nombre}
+                                        />
+                                        <Text>{product.nombre}</Text>
+                                        <Text color="green.500" fontSize="sm">
+                                            {parseCurrency(product.valor)}
+                                        </Text>
+                                    </Stack>
+                                    <Text>Stock: {product.stock}</Text>
+                                    <Button
+                                        onClick={() =>
+                                            setCart((cart) =>
+                                                cart.concat(product)
+                                            )
+                                        }
+                                        size="sm"
+                                        colorScheme="primary"
+                                    >
+                                        Agregar
+                                    </Button>
+                                </Stack>
+                            )
+                    )}
+                </Grid>
+                {Boolean(cart.length) && (
+                    <Flex
+                        alignItems="center"
+                        position="sticky"
+                        justifyContent="center"
+                        bottom={4}
                     >
-                        Finalizar compra! ({cart.length} libros){' '}
-                    </Button>
-                </Flex>
-            )}
-        </Stack>
+                        <Button
+                            onClick={() => toggleCart(true)}
+                            width="fit-content"
+                            colorScheme="whatsapp"
+                        >
+                            Ver Pedido ({cart.length} libros){' '}
+                        </Button>
+                    </Flex>
+                )}
+            </Stack>
+
+            <Drawer
+                isOpen={isCartOpen}
+                placement="right"
+                size="md"
+                onClose={() => toggleCart(false)}
+            >
+                <DrawerOverlay />
+                <DrawerContent>
+                    <DrawerCloseButton />
+                    <DrawerHeader>Tu Pedido</DrawerHeader>
+
+                    <DrawerBody>
+                        <List>
+                            {cart.map((product, index) => (
+                                <ListItem key={product.codigo}>
+                                    <Text>{product.nombre}</Text>
+                                    <Text>{parseCurrency(product.valor)}</Text>
+                                    <Button
+                                        colorScheme="red"
+                                        onClick={() =>
+                                            handleRemoveFromCart(index)
+                                        }
+                                    >
+                                        X
+                                    </Button>
+                                </ListItem>
+                            ))}
+                        </List>
+                    </DrawerBody>
+
+                    <DrawerFooter>
+                        <Button
+                            isExternal
+                            as={Link}
+                            padding={4}
+                            width="100%"
+                            size="lg"
+                            colorScheme="whatsapp"
+                            href={`https://wa.me/549115454?text=${encodeURIComponent(
+                                text
+                            )}`}
+                        >
+                            Finalizar compra! ({cart.length} libros){' '}
+                        </Button>
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+        </Fragment>
     );
 };
 
